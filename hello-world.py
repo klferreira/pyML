@@ -7,6 +7,10 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
 
 
 url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
@@ -34,11 +38,30 @@ X_train, X_validation, Y_train, Y_validation = \
     model_selection.train_test_split(X, Y, test_size=validation_size, random_state=seed)
 
 # Spot Checking
-models = []
+models = [
+    ('LR', LogisticRegression()),
+    ('LDA', LinearDiscriminantAnalysis()),
+    ('KNN', KNeighborsClassifier()),
+    ('CART', DecisionTreeClassifier()),
+    ('NB', GaussianNB()),
+    ('SVM', SVC())
+]
 
-models.append(('LR', LogisticRegression()))
-models.append(('LDA', LinearDiscriminantAnalysis()))
-models.append(('KNN', KNeighborsClassifier()))
-models.append(('CART', DecisionTreeClassifier()))
-models.append(('NB', GaussianNB()))
-models.append(('SVM', SVC()))
+results = []
+names = []
+
+# Shows KNN as the most accurate model
+for name, model in models:
+    kfold = model_selection.KFold(n_splits=10, random_state=seed)
+    cv_results = model_selection.cross_val_score(model, X_train, Y_train, cv=kfold, scoring=scoring)
+    results.append(cv_results)
+    names.append(name)
+    msg = "{}: {} ({})".format(name, round(cv_results.mean(), 3), round(cv_results.std(), 3))
+    print(msg)
+
+knn = KNeighborsClassifier()
+knn.fit(X_train, Y_train)
+predictions = knn.predict(X_validation)
+print(accuracy_score(Y_validation, predictions))
+print(confusion_matrix(Y_validation, predictions))
+print(classification_report(Y_validation, predictions))
